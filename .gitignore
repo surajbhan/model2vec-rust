@@ -1,0 +1,21 @@
+# Rust build artifacts
+/target
+
+# Python virtual environment and cache
+/venv
+/.venv
+__pycache__/
+*.pyc
+
+# Local model weights (large files)
+/model/model.safetensors
+
+# IDE and system files
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Agent/CLI internal files
+.antigravitycli/
+.antigravity*
