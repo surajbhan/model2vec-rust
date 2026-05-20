@@ -1,0 +1,15 @@
+{
+  "name": "model2vec-rust",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "model2vec_rust_bg.wasm",
+    "model2vec_rust.js",
+    "model2vec_rust.d.ts"
+  ],
+  "main": "model2vec_rust.js",
+  "types": "model2vec_rust.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

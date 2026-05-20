@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Model2Vec WASM Inference Engine</title>
+    
+    <!-- Outfit Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: rgba(255, 255, 255, 0.03);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --accent-color: #6366f1;
+            --success-color: #10b981;
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 40%);
+        }
+
+        header {
+            width: 100%;
+            max-width: 1000px;
+            padding: 2.5rem 1.5rem 1.5rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.05em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        main {
+            width: 100%;
+            max-width: 1000px;
+            padding: 0 1.5rem 3rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            main {
+                grid-template-columns: 1fr 1fr;
+            }
+            .full-width {
+                grid-column: span 2;
+            }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            backdrop-filter: blur(16px);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s ease, transform 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            background: #374151;
+            color: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Progress bars */
+        .progress-container {
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .progress-bar-wrapper {
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 0.25rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-gradient);
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        /* Console log */
+        .console {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            max-height: 150px;
+            overflow-y: auto;
+            color: #34d399;
+            margin-top: 1rem;
+        }
+
+        /* Similarity Heatmap */
+        .similarity-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.02);
+            font-weight: 600;
+        }
+
+        .cell-sim {
+            font-weight: bold;
+            color: var(--bg-primary);
+            transition: background-color 0.3s ease;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .badge {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-loading {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        /* Gradient indicator for cosine similarity */
+        .color-scale {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .scale-gradient {
+            width: 100px;
+            height: 10px;
+            background: linear-gradient(to right, #ef4444, #f59e0b, #10b981);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ Model2Vec WASM Inference</h1>
+        <p class="subtitle">Supercharge static embedding inference directly in your browser using pure Rust & WebAssembly</p>
+    </header>
+
+    <main>
+        
+        <!-- Left Column: Load Model -->
+        <div class="card">
+            <div class="card-title">
+                <span>📦</span> Model Configuration
+                <span id="model-status" class="badge badge-loading" style="margin-left: auto;">Not Loaded</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="model-select">Select Model</label>
+                <select id="model-select">
+                    <option value="minishlab/potion-base-8M" selected>minishlab/potion-base-8M (30 MB, Recommended)</option>
+                    <option value="minishlab/potion-base-32M">minishlab/potion-base-32M (129 MB, Accurate)</option>
+                </select>
+            </div>
+            
+            <button id="btn-load" class="btn">
+                <span>🚀</span> Load Model in Browser
+            </button>
+            
+            <div id="progress-container" class="progress-container">
+                <div class="progress-bar-wrapper">
+                    <div class="progress-label">
+                        <span id="prog-label-config">config.json</span>
+                        <span id="prog-val-config">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="prog-fill-config" class="progress-fill"></div>
+                    </div>
+                </div>
+                
+                <div class="progress-bar-wrapper">
+                    <div class="progress-label">
+                        <span id="prog-label-tokenizer">tokenizer.json</span>
+                        <span id="prog-val-tokenizer">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="prog-fill-tokenizer" class="progress-fill"></div>
+                    </div>
+                </div>
+                
+                <div class="progress-bar-wrapper">
+                    <div class="progress-label">
+                        <span id="prog-label-model">model.safetensors</span>
+                        <span id="prog-val-model">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="prog-fill-model" class="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="console" class="console">
+                Ready to initialize. Select a model and click Load.
+            </div>
+        </div>
+
+        <!-- Right Column: Model Stats & Inference Test -->
+        <div class="card">
+            <div class="card-title">
+                <span>⚡</span> Performance & Stats
+            </div>
+            
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div id="stat-dim" class="stat-value">-</div>
+                    <div class="stat-label">Dimension</div>
+                </div>
+                <div class="stat-box">
+                    <div id="stat-vocab" class="stat-value">-</div>
+                    <div class="stat-label">Vocab Size</div>
+                </div>
+                <div class="stat-box">
+                    <div id="stat-time" class="stat-value">-</div>
+                    <div class="stat-label">Inference Time</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="input-sentences">Test Sentences (one per line)</label>
+                <textarea id="input-sentences" rows="5" disabled>Rust and WebAssembly are exceptionally fast!
+Model2Vec works beautifully in the browser.
+Static embeddings offer extremely low latency inference.
+Artificial intelligence and machine learning algorithms.
+High-throughput matrix calculations on CPU.</textarea>
+            </div>
+            
+            <button id="btn-encode" class="btn" disabled>
+                <span>🧬</span> Calculate Embeddings & Similarity
+            </button>
+        </div>
+
+        <!-- Bottom Heatmap Section -->
+        <div class="card full-width">
+            <div class="card-title">
+                <span>📊</span> Cosine Similarity Heatmap
+                <div class="color-scale" style="margin-left: auto;">
+                    <span>Dissimilar (0.0)</span>
+                    <div class="scale-gradient"></div>
+                    <span>Identical (1.0)</span>
+                </div>
+            </div>
+            
+            <div id="heatmap-placeholder" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                Load the model and run the encoder to see cosine similarity heatmaps.
+            </div>
+            
+            <div id="heatmap-container" class="similarity-table-wrapper" style="display: none;">
+                <table id="heatmap-table">
+                    <!-- Dynamic -->
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script type="module">
+        import init, { Model2VecWasm } from "./pkg/model2vec_rust.js";
+
+        let model = null;
+        
+        const logBox = document.getElementById("console");
+        const btnLoad = document.getElementById("btn-load");
+        const btnEncode = document.getElementById("btn-encode");
+        const inputSentences = document.getElementById("input-sentences");
+        const statDim = document.getElementById("stat-dim");
+        const statVocab = document.getElementById("stat-vocab");
+        const statTime = document.getElementById("stat-time");
+        const heatmapContainer = document.getElementById("heatmap-container");
+        const heatmapPlaceholder = document.getElementById("heatmap-placeholder");
+        const heatmapTable = document.getElementById("heatmap-table");
+        
+        function log(message) {
+            logBox.innerHTML += `\n> ${message}`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        async function fetchWithProgress(url, label, fillId, valId) {
+            log(`Downloading ${label}...`);
+            const fill = document.getElementById(fillId);
+            const val = document.getElementById(valId);
+            
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+            
+            const contentLength = response.headers.get("content-length");
+            if (!contentLength) {
+                const blob = await response.blob();
+                fill.style.width = "100%";
+                val.innerText = "100%";
+                return new Uint8Array(await blob.arrayBuffer());
+            }
+
+            const total = parseInt(contentLength, 10);
+            let loaded = 0;
+            const reader = response.body.getReader();
+            const chunks = [];
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                loaded += value.length;
+                
+                const percent = Math.round((loaded / total) * 100);
+                fill.style.width = `${percent}%`;
+                val.innerText = `${percent}%`;
+            }
+
+            log(`Finished downloading ${label}!`);
+            const allChunks = new Uint8Array(total);
+            let position = 0;
+            for (let chunk of chunks) {
+                allChunks.set(chunk, position);
+                position += chunk.length;
+            }
+            return allChunks;
+        }
+
+        btnLoad.onclick = async () => {
+            const repo = document.getElementById("model-select").value;
+            btnLoad.disabled = true;
+            document.getElementById("progress-container").style.display = "block";
+            
+            try {
+                logBox.innerHTML = `Initializing model setup for: ${repo}`;
+                
+                const configBytes = await fetchWithProgress(
+                    `https://huggingface.co/${repo}/resolve/main/config.json`,
+                    "config.json",
+                    "prog-fill-config",
+                    "prog-val-config"
+                );
+                
+                const tokenizerBytes = await fetchWithProgress(
+                    `https://huggingface.co/${repo}/resolve/main/tokenizer.json`,
+                    "tokenizer.json",
+                    "prog-fill-tokenizer",
+                    "prog-val-tokenizer"
+                );
+                
+                const safetensorsBytes = await fetchWithProgress(
+                    `https://huggingface.co/${repo}/resolve/main/model.safetensors`,
+                    "model.safetensors",
+                    "prog-fill-model",
+                    "prog-val-model"
+                );
+
+                log("Loading WebAssembly core module...");
+                await init();
+                
+                log("Instantiating Model2Vec Rust engine...");
+                const start = performance.now();
+                model = new Model2VecWasm(configBytes, tokenizerBytes, safetensorsBytes);
+                const elapsed = performance.now() - start;
+                
+                log(`Successfully loaded model in ${elapsed.toFixed(1)}ms!`);
+                
+                // Set stats
+                statDim.innerText = model.dim();
+                statVocab.innerText = model.vocab_size();
+                statTime.innerText = "0.00 ms";
+                
+                // Update UI state
+                const status = document.getElementById("model-status");
+                status.innerText = "Active";
+                status.className = "badge";
+                
+                btnEncode.disabled = false;
+                inputSentences.disabled = false;
+            } catch (err) {
+                log(`Error: ${err.message}`);
+                btnLoad.disabled = false;
+            }
+        };
+
+        function cosineSimilarity(vecA, vecB) {
+            let dot = 0;
+            let normA = 0;
+            let normB = 0;
+            for (let i = 0; i < vecA.length; i++) {
+                dot += vecA[i] * vecB[i];
+                normA += vecA[i] * vecA[i];
+                normB += vecB[i] * vecB[i];
+            }
+            if (normA === 0 || normB === 0) return 0;
+            return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+        }
+
+        function getHeatmapColor(sim) {
+            // Map similarity [-1, 1] or [0, 1] to red/yellow/green color scale
+            // Let's normalize it to [0, 1] range first
+            const val = Math.max(0, Math.min(1, sim));
+            
+            // Interpolate colors
+            // High is green: #10b981 (16, 185, 129)
+            // Mid is yellow: #f59e0b (245, 158, 11)
+            // Low is red: #ef4444 (239, 68, 68)
+            let r, g, b;
+            if (val < 0.5) {
+                // Interpolate red to yellow
+                const factor = val * 2;
+                r = Math.round(239 + (245 - 239) * factor);
+                g = Math.round(68 + (158 - 68) * factor);
+                b = Math.round(68 + (11 - 68) * factor);
+            } else {
+                // Interpolate yellow to green
+                const factor = (val - 0.5) * 2;
+                r = Math.round(245 + (16 - 245) * factor);
+                g = Math.round(158 + (185 - 158) * factor);
+                b = Math.round(11 + (129 - 11) * factor);
+            }
+            
+            return `rgba(${r}, ${g}, ${b}, 0.85)`;
+        }
+
+        btnEncode.onclick = () => {
+            if (!model) return;
+            
+            const sentences = inputSentences.value
+                .split("\n")
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+                
+            if (sentences.length === 0) return;
+            
+            try {
+                const start = performance.now();
+                
+                // Call batch encoder (returns flat array of dim * sentences.length)
+                const dim = model.dim();
+                const flatEmbeddings = model.encode_batch(sentences, false);
+                
+                const elapsed = performance.now() - start;
+                
+                // Show stats
+                statTime.innerText = `${(elapsed / sentences.length).toFixed(2)} ms / sen`;
+                
+                // Reconstruct individual vectors
+                const vectors = [];
+                for (let i = 0; i < sentences.length; i++) {
+                    const offset = i * dim;
+                    vectors.push(flatEmbeddings.slice(offset, offset + dim));
+                }
+                
+                // Calculate similarity matrix
+                const similarities = [];
+                for (let i = 0; i < sentences.length; i++) {
+                    similarities[i] = [];
+                    for (let j = 0; j < sentences.length; j++) {
+                        similarities[i][j] = cosineSimilarity(vectors[i], vectors[j]);
+                    }
+                }
+                
+                // Render table
+                heatmapPlaceholder.style.display = "none";
+                heatmapContainer.style.display = "block";
+                
+                let html = `<thead><tr><th>Sentence</th>`;
+                for (let i = 0; i < sentences.length; i++) {
+                    html += `<th>S${i + 1}</th>`;
+                }
+                html += `</tr></thead><tbody>`;
+                
+                for (let i = 0; i < sentences.length; i++) {
+                    html += `<tr>`;
+                    const shortText = sentences[i].length > 30 ? `${sentences[i].substring(0, 27)}...` : sentences[i];
+                    html += `<td style="text-align: left; font-weight: 500;" title="${sentences[i]}"><strong>S${i + 1}:</strong> ${shortText}</td>`;
+                    for (let j = 0; j < sentences.length; j++) {
+                        const sim = similarities[i][j];
+                        const color = getHeatmapColor(sim);
+                        html += `<td class="cell-sim" style="background-color: ${color};" title="'${sentences[i]}' vs '${sentences[j]}' = ${sim.toFixed(4)}">${sim.toFixed(3)}</td>`;
+                    }
+                    html += `</tr>`;
+                }
+                html += `</tbody>`;
+                
+                heatmapTable.innerHTML = html;
+            } catch (err) {
+                alert(`Encoding error: ${err.message}`);
+            }
+        };
+    </script>
+</body>
+</html>
