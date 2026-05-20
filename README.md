@@ -19,15 +19,15 @@ This engine is optimized for high-throughput, low-latency CPU environments, achi
 
 ## 📊 Performance & Correctness Summary
 
-Tested using `minishlab/potion-base-8M` distilled from `BAAI/bge-base-en-v1.5` on a standard CPU:
+Tested using `minishlab/potion-base-32M` distilled from `BAAI/bge-base-en-v1.5` on a standard CPU:
 
 | Metric | Python (`model2vec`) | Our Rust Engine | Speedup |
 | :--- | :--- | :--- | :--- |
-| **Single Sentence Latency** | ~1,000 to 2,000 µs (1-2 ms) | **18.5 µs** (0.018 ms) | **~50x to 100x faster** |
-| **Single-Core Throughput** | ~500 sentences / sec | **~54,000 sentences / sec** | **~100x higher throughput** |
-| **Multi-Core Throughput (Batch)** | GIL bottlenecks | **~101,600 sentences / sec** | **Highly scale-efficient** |
-| **Parity Max Abs Difference** | - | **`0.00000009`** | Within `float32` limits |
-| **Mean Squared Error (MSE)** | - | **`8.51e-17`** | Practically zero |
+| **Single Sentence Latency** | ~1,000 to 2,000 µs (1-2 ms) | **19.25 µs** (0.019 ms) | **~50x to 100x faster** |
+| **Single-Core Throughput** | ~500 sentences / sec | **~51,900 sentences / sec** | **~100x higher throughput** |
+| **Multi-Core Throughput (Batch)** | GIL bottlenecks | **~112,000 sentences / sec** | **Highly scale-efficient** |
+| **Parity Max Abs Difference** | - | **`0.00000010`** | Within `float32` limits |
+| **Mean Squared Error (MSE)** | - | **`1.38e-16`** | Practically zero |
 
 ---
 
@@ -103,10 +103,12 @@ cargo bench
 ---
 
 ## 📂 Model Directory Structure
-Ensure your `model/` folder contains the following three files downloaded from Hugging Face (e.g., [minishlab/potion-base-8M](https://huggingface.co/minishlab/potion-base-8M)):
+Ensure your `model/` folder contains the following files downloaded from Hugging Face (e.g., [minishlab/potion-base-32M](https://huggingface.co/minishlab/potion-base-32M)):
 ```text
 model/
+├── README.md
 ├── config.json
-├── tokenizer.json
-└── model.safetensors
+├── model.safetensors
+├── modules.json
+└── tokenizer.json
 ```
